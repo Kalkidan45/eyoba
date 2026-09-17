@@ -753,16 +753,24 @@ export const POSModule: React.FC<POSModuleProps> = ({
               {paymentMethod === 'cash' && (
                 <div className="bg-amber-50/70 border border-amber-200 p-3 rounded-xl space-y-2">
                   <div className="flex justify-between items-center text-xs">
-                    <span className="font-semibold text-amber-900">Cash Tendered ($):</span>
+                    <span className="font-semibold text-amber-900">Cash Tendered (Birr):</span>
                     <div className="flex space-x-1">
-                      {[Math.ceil(totalDue), 20, 50, 100].map((amt) => (
+                      {(() => {
+                        const rounded = Math.ceil(totalDue);
+                        const birrNotes = [50, 100, 200, 500, 1000];
+                        const higher = birrNotes.filter((amt) => amt >= rounded);
+                        const options = Array.from(
+                          new Set([rounded, ...(higher.length > 0 ? higher.slice(0, 3) : [rounded + 50, rounded + 100])])
+                        );
+                        return options.slice(0, 4);
+                      })().map((amt) => (
                         <button
                           key={amt}
                           type="button"
                           onClick={() => setCashTendered(String(amt))}
                           className="px-2 py-0.5 rounded bg-white border border-amber-300 text-amber-900 text-[10px] font-bold hover:bg-amber-100"
                         >
-                          ${amt}
+                          {amt} Birr
                         </button>
                       ))}
                     </div>

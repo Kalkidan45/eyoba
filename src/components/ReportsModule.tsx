@@ -179,6 +179,7 @@ export const ReportsModule: React.FC<ReportsModuleProps> = ({
     const lines = [
       `APPARELPOS END-OF-MONTH FINANCIAL REPORT - ${formatMonthLabel(selectedMonth).toUpperCase()}`,
       `Generated on: ${new Date().toLocaleString()}`,
+      `Currency: Ethiopian Birr (Birr)`,
       `Sales Type Filter: ${salesTypeFilter.toUpperCase()}`,
       '',
       'EXECUTIVE FINANCIAL SUMMARY',

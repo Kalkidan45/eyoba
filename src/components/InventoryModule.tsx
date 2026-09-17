@@ -164,7 +164,21 @@ export const InventoryModule: React.FC<InventoryModuleProps> = ({
 
   // Export inventory to CSV
   const handleExportCSV = () => {
-    const headers = ['Item Name', 'Category', 'SKU', 'Barcode', 'Size', 'Color', 'Purchase Price', 'Wholesale Price', 'Retail Price', 'Stock Quantity', 'Min Threshold', 'Cost Value', 'Retail Value'];
+    const headers = [
+      'Item Name',
+      'Category',
+      'SKU',
+      'Barcode',
+      'Size',
+      'Color',
+      'Purchase Price (Birr)',
+      'Wholesale Price (Birr)',
+      'Retail Price (Birr)',
+      'Stock Quantity',
+      'Min Threshold',
+      'Cost Value (Birr)',
+      'Retail Value (Birr)'
+    ];
     const rows = products.map((p) => {
       const cat = categories.find((c) => c.id === p.categoryId)?.name || 'Unknown';
       return [
@@ -635,7 +649,7 @@ export const InventoryModule: React.FC<InventoryModuleProps> = ({
                 <div className="grid grid-cols-3 gap-2">
                   <div>
                     <label className="block text-[11px] font-medium text-slate-600 mb-0.5">
-                      Purchase Cost ($)
+                      Purchase Cost (Birr)
                     </label>
                     <input
                       type="number"
@@ -650,7 +664,7 @@ export const InventoryModule: React.FC<InventoryModuleProps> = ({
 
                   <div>
                     <label className="block text-[11px] font-medium text-purple-700 mb-0.5">
-                      Wholesale Price ($)
+                      Wholesale Price (Birr)
                     </label>
                     <input
                       type="number"
@@ -665,7 +679,7 @@ export const InventoryModule: React.FC<InventoryModuleProps> = ({
 
                   <div>
                     <label className="block text-[11px] font-medium text-emerald-700 mb-0.5">
-                      Retail Price (MSRP)
+                      Retail Price (Birr)
                     </label>
                     <input
                       type="number"
