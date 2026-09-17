@@ -1,0 +1,6 @@
+{
+  "name": "ApparelPOS & Clothing Inventory",
+  "description": "Comprehensive web-based Inventory and Point of Sale (POS) system for clothing retail and wholesale stores, featuring dynamic pricing, live stock deduction, and COGS financial analytics.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
