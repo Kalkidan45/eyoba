@@ -96,8 +96,23 @@ export const CategoryModule: React.FC<CategoryModuleProps> = ({
       </div>
 
       {/* Categories Cards Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {categories.map((cat) => {
+      {categories.length === 0 ? (
+        <div className="bg-white rounded-xl border border-dashed border-slate-300 p-12 text-center">
+          <h4 className="font-semibold text-sm text-slate-800">No categories created yet</h4>
+          <p className="text-xs text-slate-500 mt-1 mb-4 max-w-md mx-auto">
+            Categorize your inventory lines (e.g., T-Shirts, Jackets, Trousers) to organize products, automate SKU prefixes, and track margins.
+          </p>
+          <button
+            type="button"
+            onClick={handleOpenAdd}
+            className="inline-flex items-center px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-semibold shadow-xs transition-colors"
+          >
+            + Create First Category
+          </button>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {categories.map((cat) => {
           const catProducts = products.filter((p) => p.categoryId === cat.id);
           const totalUnits = catProducts.reduce((sum, p) => sum + p.stockQuantity, 0);
           const totalCostVal = catProducts.reduce((sum, p) => sum + p.stockQuantity * p.purchasePrice, 0);
@@ -164,6 +179,7 @@ export const CategoryModule: React.FC<CategoryModuleProps> = ({
           );
         })}
       </div>
+      )}
 
       {/* Add / Edit Category Modal */}
       {isModalOpen && (

@@ -17,7 +17,8 @@ import {
   getStoredProducts, 
   saveProducts, 
   getStoredSales, 
-  saveSales 
+  saveSales,
+  clearAllData 
 } from './utils/storage';
 
 export default function App() {
@@ -145,6 +146,14 @@ export default function App() {
     showToast('Category removed.');
   };
 
+  const handleClearAllData = () => {
+    clearAllData();
+    setCategories([]);
+    setProducts([]);
+    setSales([]);
+    showToast('All sample data has been cleared.');
+  };
+
   return (
     <div className="min-h-screen bg-slate-100/70 text-slate-900 flex flex-col font-sans antialiased selection:bg-indigo-500 selection:text-white">
       {/* Top Navigation */}
@@ -154,6 +163,7 @@ export default function App() {
         salesType={salesType}
         setSalesType={setSalesType}
         lowStockCount={lowStockCount}
+        onClearAllData={handleClearAllData}
       />
 
       {/* Main Content Area */}

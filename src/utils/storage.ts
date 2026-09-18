@@ -1,23 +1,45 @@
 import { Category, ClothingItem, SaleTransaction, StockValuation, MonthlyFinancialSummary } from '../types';
-import { INITIAL_CATEGORIES, INITIAL_PRODUCTS, INITIAL_SALES } from '../mockData';
+import { DEMO_CATEGORIES, DEMO_PRODUCTS, DEMO_SALES } from '../mockData';
 
 const STORAGE_KEYS = {
-  CATEGORIES: 'apparel_pos_categories_v1',
-  PRODUCTS: 'apparel_pos_products_v1',
-  SALES: 'apparel_pos_sales_v1',
+  CATEGORIES: 'apparel_pos_categories_v2',
+  PRODUCTS: 'apparel_pos_products_v2',
+  SALES: 'apparel_pos_sales_v2',
+  INITIALIZED_FLAG: 'apparel_pos_v2_initialized',
 };
+
+// Purge legacy sample data once on startup
+const purgeSampleDataOnce = () => {
+  try {
+    if (typeof window !== 'undefined' && window.localStorage) {
+      if (!localStorage.getItem(STORAGE_KEYS.INITIALIZED_FLAG)) {
+        localStorage.removeItem('apparel_pos_categories_v1');
+        localStorage.removeItem('apparel_pos_products_v1');
+        localStorage.removeItem('apparel_pos_sales_v1');
+        localStorage.setItem(STORAGE_KEYS.CATEGORIES, JSON.stringify([]));
+        localStorage.setItem(STORAGE_KEYS.PRODUCTS, JSON.stringify([]));
+        localStorage.setItem(STORAGE_KEYS.SALES, JSON.stringify([]));
+        localStorage.setItem(STORAGE_KEYS.INITIALIZED_FLAG, 'true');
+      }
+    }
+  } catch (err) {
+    console.error('Storage initialization error:', err);
+  }
+};
+
+purgeSampleDataOnce();
 
 export const getStoredCategories = (): Category[] => {
   try {
     const raw = localStorage.getItem(STORAGE_KEYS.CATEGORIES);
     if (!raw) {
-      localStorage.setItem(STORAGE_KEYS.CATEGORIES, JSON.stringify(INITIAL_CATEGORIES));
-      return INITIAL_CATEGORIES;
+      localStorage.setItem(STORAGE_KEYS.CATEGORIES, JSON.stringify([]));
+      return [];
     }
     return JSON.parse(raw);
   } catch (err) {
     console.error('Failed to read categories from storage:', err);
-    return INITIAL_CATEGORIES;
+    return [];
   }
 };
 
@@ -29,13 +51,13 @@ export const getStoredProducts = (): ClothingItem[] => {
   try {
     const raw = localStorage.getItem(STORAGE_KEYS.PRODUCTS);
     if (!raw) {
-      localStorage.setItem(STORAGE_KEYS.PRODUCTS, JSON.stringify(INITIAL_PRODUCTS));
-      return INITIAL_PRODUCTS;
+      localStorage.setItem(STORAGE_KEYS.PRODUCTS, JSON.stringify([]));
+      return [];
     }
     return JSON.parse(raw);
   } catch (err) {
     console.error('Failed to read products from storage:', err);
-    return INITIAL_PRODUCTS;
+    return [];
   }
 };
 
@@ -47,13 +69,13 @@ export const getStoredSales = (): SaleTransaction[] => {
   try {
     const raw = localStorage.getItem(STORAGE_KEYS.SALES);
     if (!raw) {
-      localStorage.setItem(STORAGE_KEYS.SALES, JSON.stringify(INITIAL_SALES));
-      return INITIAL_SALES;
+      localStorage.setItem(STORAGE_KEYS.SALES, JSON.stringify([]));
+      return [];
     }
     return JSON.parse(raw);
   } catch (err) {
     console.error('Failed to read sales from storage:', err);
-    return INITIAL_SALES;
+    return [];
   }
 };
 
@@ -61,10 +83,24 @@ export const saveSales = (sales: SaleTransaction[]) => {
   localStorage.setItem(STORAGE_KEYS.SALES, JSON.stringify(sales));
 };
 
-export const resetToDemoData = () => {
-  localStorage.setItem(STORAGE_KEYS.CATEGORIES, JSON.stringify(INITIAL_CATEGORIES));
-  localStorage.setItem(STORAGE_KEYS.PRODUCTS, JSON.stringify(INITIAL_PRODUCTS));
-  localStorage.setItem(STORAGE_KEYS.SALES, JSON.stringify(INITIAL_SALES));
+export const clearAllData = () => {
+  localStorage.setItem(STORAGE_KEYS.CATEGORIES, JSON.stringify([]));
+  localStorage.setItem(STORAGE_KEYS.PRODUCTS, JSON.stringify([]));
+  localStorage.setItem(STORAGE_KEYS.SALES, JSON.stringify([]));
+  localStorage.removeItem('apparel_pos_categories_v1');
+  localStorage.removeItem('apparel_pos_products_v1');
+  localStorage.removeItem('apparel_pos_sales_v1');
+};
+
+export const loadDemoData = () => {
+  localStorage.setItem(STORAGE_KEYS.CATEGORIES, JSON.stringify(DEMO_CATEGORIES));
+  localStorage.setItem(STORAGE_KEYS.PRODUCTS, JSON.stringify(DEMO_PRODUCTS));
+  localStorage.setItem(STORAGE_KEYS.SALES, JSON.stringify(DEMO_SALES));
+  return {
+    categories: DEMO_CATEGORIES,
+    products: DEMO_PRODUCTS,
+    sales: DEMO_SALES,
+  };
 };
 
 export const calculateStockValuation = (products: ClothingItem[]): StockValuation => {

@@ -361,7 +361,23 @@ export const InventoryModule: React.FC<InventoryModuleProps> = ({
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 bg-white font-normal">
-              {filteredProducts.length === 0 ? (
+              {products.length === 0 ? (
+                <tr>
+                  <td colSpan={8} className="px-4 py-16 text-center text-slate-500">
+                    <p className="font-semibold text-sm text-slate-800">Inventory is empty</p>
+                    <p className="text-xs text-slate-400 mt-1 mb-4">
+                      No clothing items are registered yet. Add your first item to begin tracking stock, sizes, barcodes, and pricing.
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => setIsAddModalOpen(true)}
+                      className="inline-flex items-center px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-semibold shadow-xs transition-colors"
+                    >
+                      + Add First Product
+                    </button>
+                  </td>
+                </tr>
+              ) : filteredProducts.length === 0 ? (
                 <tr>
                   <td colSpan={8} className="px-4 py-12 text-center text-slate-400">
                     No clothing inventory matching the filters.

@@ -7,6 +7,7 @@ interface NavbarProps {
   salesType: SalesType;
   setSalesType: (type: SalesType) => void;
   lowStockCount: number;
+  onClearAllData?: () => void;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
@@ -15,6 +16,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   salesType,
   setSalesType,
   lowStockCount,
+  onClearAllData,
 }) => {
   const navItems = [
     {
@@ -88,8 +90,22 @@ export const Navbar: React.FC<NavbarProps> = ({
             })}
           </nav>
 
-          {/* Right Mode Switcher - Text-only segmented toggle */}
-          <div className="flex items-center shrink-0">
+          {/* Right Controls: Clear Data & Mode Switcher */}
+          <div className="flex items-center space-x-2 shrink-0">
+            {onClearAllData && (
+              <button
+                type="button"
+                onClick={() => {
+                  if (window.confirm('Clear all stored inventory, categories, and sales transactions?')) {
+                    onClearAllData();
+                  }
+                }}
+                className="px-2 py-1 text-[11px] font-medium text-slate-400 hover:text-rose-400 hover:bg-slate-800 rounded transition-colors whitespace-nowrap"
+                title="Wipe all data and start completely fresh"
+              >
+                Clear Data
+              </button>
+            )}
             <div className="flex items-center bg-slate-800 p-0.5 rounded-md border border-slate-700 text-xs">
               <button
                 id="btn-mode-retail"

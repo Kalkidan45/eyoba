@@ -379,7 +379,14 @@ export const POSModule: React.FC<POSModuleProps> = ({
 
           {/* Products Grid */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-            {filteredProducts.length === 0 ? (
+            {products.length === 0 ? (
+              <div className="col-span-2 py-16 text-center bg-white rounded-xl border border-dashed border-slate-300 p-8">
+                <p className="text-sm font-semibold text-slate-800">Catalog is empty</p>
+                <p className="text-xs text-slate-500 mt-1">
+                  There are no clothing items in inventory. Add products in the Inventory Catalog tab to ring up sales.
+                </p>
+              </div>
+            ) : filteredProducts.length === 0 ? (
               <div className="col-span-2 py-12 text-center bg-white rounded-xl border border-slate-200 p-6">
                 <p className="text-sm font-semibold text-slate-700">No clothing items found</p>
                 <p className="text-xs text-slate-400 mt-1">

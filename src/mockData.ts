@@ -1,6 +1,10 @@
 import { Category, ClothingItem, SaleTransaction } from './types';
 
-export const INITIAL_CATEGORIES: Category[] = [
+export const INITIAL_CATEGORIES: Category[] = [];
+export const INITIAL_PRODUCTS: ClothingItem[] = [];
+export const INITIAL_SALES: SaleTransaction[] = [];
+
+export const DEMO_CATEGORIES: Category[] = [
   {
     id: 'cat-tshirts',
     name: 'T-Shirts & Tops',
@@ -38,7 +42,7 @@ export const INITIAL_CATEGORIES: Category[] = [
   },
 ];
 
-export const INITIAL_PRODUCTS: ClothingItem[] = [
+export const DEMO_PRODUCTS: ClothingItem[] = [
   {
     id: 'prod-1',
     name: 'Heavyweight Cotton Crewneck Tee',
@@ -228,7 +232,7 @@ export const INITIAL_PRODUCTS: ClothingItem[] = [
   },
 ];
 
-export const INITIAL_SALES: SaleTransaction[] = [
+export const DEMO_SALES: SaleTransaction[] = [
   // September 2026 sales (Current month)
   {
     id: 'sale-101',
