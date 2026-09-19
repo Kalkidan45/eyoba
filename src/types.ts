@@ -101,3 +101,12 @@ export interface StockValuation {
   lowStockItemCount: number;
   outOfStockItemCount: number;
 }
+
+export interface AuthUser {
+  id: string;
+  username: string;
+  displayName: string;
+  role: 'admin' | 'manager' | 'cashier';
+  storeName?: string;
+  loginTime: string;
+}

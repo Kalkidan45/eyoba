@@ -1,5 +1,6 @@
 import React from 'react';
-import { SalesType } from '../types';
+import { SalesType, AuthUser } from '../types';
+import { Database, LogIn, LogOut, Shield } from 'lucide-react';
 
 interface NavbarProps {
   activeTab: 'pos' | 'inventory' | 'categories' | 'reports';
@@ -7,7 +8,11 @@ interface NavbarProps {
   salesType: SalesType;
   setSalesType: (type: SalesType) => void;
   lowStockCount: number;
+  user: AuthUser | null;
+  onOpenAuth: () => void;
+  onLogout: () => void;
   onClearAllData?: () => void;
+  isSyncing?: boolean;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
@@ -16,7 +21,11 @@ export const Navbar: React.FC<NavbarProps> = ({
   salesType,
   setSalesType,
   lowStockCount,
+  user,
+  onOpenAuth,
+  onLogout,
   onClearAllData,
+  isSyncing = false,
 }) => {
   const navItems = [
     {
@@ -46,17 +55,19 @@ export const Navbar: React.FC<NavbarProps> = ({
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-14 gap-4">
           
-          {/* Brand Identity - Clean text-only branding */}
+          {/* Brand Identity */}
           <div className="flex items-center space-x-2.5 shrink-0">
             <span className="font-extrabold text-base tracking-tight text-white whitespace-nowrap">
               ApparelPOS
             </span>
-            <span className="hidden sm:inline-block px-1.5 py-0.5 rounded text-[10px] font-medium text-slate-400 bg-slate-800 border border-slate-700/60 whitespace-nowrap">
-              Retail & Wholesale
-            </span>
+            <div className="hidden sm:flex items-center space-x-1 px-2 py-0.5 rounded text-[10px] font-medium text-slate-300 bg-slate-800 border border-slate-700/60 whitespace-nowrap">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+              <Database className="w-3 h-3 text-emerald-400 mr-0.5" />
+              <span>Cloud Database Sync</span>
+            </div>
           </div>
 
-          {/* Center Navigation Links - Icon-free text tabs to maximize desktop space */}
+          {/* Center Navigation Links */}
           <nav className="hidden md:flex items-center space-x-1">
             {navItems.map((item) => {
               const isActive = activeTab === item.id;
@@ -90,28 +101,15 @@ export const Navbar: React.FC<NavbarProps> = ({
             })}
           </nav>
 
-          {/* Right Controls: Clear Data & Mode Switcher */}
+          {/* Right Controls: Mode Switcher, Clear Data & Auth User */}
           <div className="flex items-center space-x-2 shrink-0">
-            {onClearAllData && (
-              <button
-                type="button"
-                onClick={() => {
-                  if (window.confirm('Clear all stored inventory, categories, and sales transactions?')) {
-                    onClearAllData();
-                  }
-                }}
-                className="px-2 py-1 text-[11px] font-medium text-slate-400 hover:text-rose-400 hover:bg-slate-800 rounded transition-colors whitespace-nowrap"
-                title="Wipe all data and start completely fresh"
-              >
-                Clear Data
-              </button>
-            )}
+            {/* Mode Switcher */}
             <div className="flex items-center bg-slate-800 p-0.5 rounded-md border border-slate-700 text-xs">
               <button
                 id="btn-mode-retail"
                 type="button"
                 onClick={() => setSalesType('retail')}
-                className={`px-3 py-1 rounded text-xs whitespace-nowrap transition-all ${
+                className={`px-2.5 py-1 rounded text-xs whitespace-nowrap transition-all ${
                   salesType === 'retail'
                     ? 'bg-indigo-600 text-white font-semibold shadow-xs'
                     : 'text-slate-400 hover:text-slate-200'
@@ -124,7 +122,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                 id="btn-mode-wholesale"
                 type="button"
                 onClick={() => setSalesType('wholesale')}
-                className={`px-3 py-1 rounded text-xs whitespace-nowrap transition-all ${
+                className={`px-2.5 py-1 rounded text-xs whitespace-nowrap transition-all ${
                   salesType === 'wholesale'
                     ? 'bg-purple-600 text-white font-semibold shadow-xs'
                     : 'text-slate-400 hover:text-slate-200'
@@ -134,6 +132,61 @@ export const Navbar: React.FC<NavbarProps> = ({
                 Wholesale
               </button>
             </div>
+
+            {/* Clear Data (Optional) */}
+            {onClearAllData && user?.role === 'admin' && (
+              <button
+                type="button"
+                onClick={() => {
+                  if (window.confirm('Clear all stored inventory, categories, and sales transactions in the cloud database?')) {
+                    onClearAllData();
+                  }
+                }}
+                className="hidden lg:inline-block px-2 py-1 text-[11px] font-medium text-slate-400 hover:text-rose-400 hover:bg-slate-800 rounded transition-colors whitespace-nowrap"
+                title="Wipe all data and start completely fresh"
+              >
+                Clear Database
+              </button>
+            )}
+
+            {/* User Login/Account Button */}
+            {user ? (
+              <div className="flex items-center space-x-1.5 pl-1.5 border-l border-slate-800">
+                <div 
+                  className="flex items-center space-x-1.5 px-2.5 py-1 bg-slate-800 hover:bg-slate-750 rounded-lg text-xs border border-slate-700/60"
+                  title={`Logged in as ${user.displayName} (@${user.username})`}
+                >
+                  <div className="w-5 h-5 rounded-full bg-indigo-600 flex items-center justify-center text-[10px] font-bold text-white shrink-0">
+                    {user.username[0].toUpperCase()}
+                  </div>
+                  <div className="hidden sm:flex flex-col text-left leading-tight">
+                    <span className="text-slate-200 font-semibold text-[11px] capitalize">
+                      {user.username}
+                    </span>
+                    <span className="text-indigo-300 text-[9px] uppercase font-bold tracking-wider">
+                      {user.role}
+                    </span>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={onLogout}
+                  className="p-1.5 text-slate-400 hover:text-rose-400 hover:bg-slate-800 rounded-lg transition-colors cursor-pointer"
+                  title="Sign Out"
+                >
+                  <LogOut className="w-4 h-4" />
+                </button>
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={onOpenAuth}
+                className="flex items-center space-x-1.5 px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-xs font-semibold shadow-xs transition-colors whitespace-nowrap cursor-pointer"
+              >
+                <LogIn className="w-3.5 h-3.5" />
+                <span>Log In</span>
+              </button>
+            )}
           </div>
 
         </div>

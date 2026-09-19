@@ -1,0 +1,106 @@
+{
+  "entities": {
+    "Category": {
+      "title": "Category",
+      "description": "Apparel product category definition",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "code": { "type": "string" },
+        "description": { "type": "string" },
+        "color": { "type": "string" },
+        "defaultMarkupPercent": { "type": "number" },
+        "createdAt": { "type": "string" },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["id", "name", "code"]
+    },
+    "ClothingItem": {
+      "title": "ClothingItem",
+      "description": "Clothing inventory item with variant details",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "sku": { "type": "string" },
+        "barcode": { "type": "string" },
+        "categoryId": { "type": "string" },
+        "size": { "type": "string" },
+        "color": { "type": "string" },
+        "material": { "type": "string" },
+        "purchasePrice": { "type": "number" },
+        "retailPrice": { "type": "number" },
+        "wholesalePrice": { "type": "number" },
+        "stockQuantity": { "type": "number" },
+        "lowStockThreshold": { "type": "number" },
+        "reorderQuantity": { "type": "number" },
+        "supplier": { "type": "string" },
+        "location": { "type": "string" },
+        "createdAt": { "type": "string" },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["id", "name", "sku", "categoryId", "purchasePrice", "retailPrice", "wholesalePrice", "stockQuantity"]
+    },
+    "SaleTransaction": {
+      "title": "SaleTransaction",
+      "description": "Completed point of sale retail or wholesale transaction record",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "receiptNumber": { "type": "string" },
+        "timestamp": { "type": "string" },
+        "salesType": { "type": "string" },
+        "customerName": { "type": "string" },
+        "customerCompany": { "type": "string" },
+        "customerPhone": { "type": "string" },
+        "items": { "type": "array" },
+        "subtotal": { "type": "number" },
+        "discount": { "type": "number" },
+        "tax": { "type": "number" },
+        "totalRevenue": { "type": "number" },
+        "totalCOGS": { "type": "number" },
+        "netProfit": { "type": "number" },
+        "profitMargin": { "type": "number" },
+        "paymentMethod": { "type": "string" },
+        "amountTendered": { "type": "number" },
+        "changeDue": { "type": "number" },
+        "notes": { "type": "string" },
+        "cashierId": { "type": "string" }
+      },
+      "required": ["id", "receiptNumber", "timestamp", "salesType", "items", "subtotal", "totalRevenue"]
+    },
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "User profile with role and preferences",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "email": { "type": "string" },
+        "displayName": { "type": "string" },
+        "role": { "type": "string" },
+        "storeName": { "type": "string" },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["uid", "email"]
+    }
+  },
+  "firestore": {
+    "/categories/{categoryId}": {
+      "schema": "Category",
+      "description": "Apparel categories collection"
+    },
+    "/products/{productId}": {
+      "schema": "ClothingItem",
+      "description": "Apparel clothing items and inventory lines"
+    },
+    "/sales/{saleId}": {
+      "schema": "SaleTransaction",
+      "description": "Historical sales receipts and transaction records"
+    },
+    "/users/{userId}": {
+      "schema": "UserProfile",
+      "description": "User profile records"
+    }
+  }
+}

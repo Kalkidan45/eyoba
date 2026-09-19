@@ -39,7 +39,6 @@ export const ReceiptModal: React.FC<ReceiptModalProps> = ({
       '------------------------------------------',
       `Subtotal:       ${formatCurrency(sale.subtotal)}`,
       sale.discount > 0 ? `Discount:       -${formatCurrency(sale.discount)}` : '',
-      `Tax:            ${formatCurrency(sale.tax)}`,
       `TOTAL PAID:     ${formatCurrency(sale.totalRevenue)}`,
       '------------------------------------------',
       `Payment Method: ${sale.paymentMethod.toUpperCase().replace('_', ' ')}`,
@@ -149,10 +148,6 @@ export const ReceiptModal: React.FC<ReceiptModalProps> = ({
                 <span>-{formatCurrency(sale.discount)}</span>
               </div>
             )}
-            <div className="flex justify-between text-slate-600">
-              <span>Tax ({sale.salesType === 'wholesale' ? 'Exempt' : '8%'})</span>
-              <span>{formatCurrency(sale.tax)}</span>
-            </div>
             <div className="flex justify-between text-slate-900 font-bold text-sm pt-1 border-t border-slate-200">
               <span>TOTAL</span>
               <span>{formatCurrency(sale.totalRevenue)}</span>

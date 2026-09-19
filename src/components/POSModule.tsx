@@ -154,15 +154,9 @@ export const POSModule: React.FC<POSModuleProps> = ({
     return (cartSubtotal * discountPercent) / 100;
   }, [cartSubtotal, discountPercent]);
 
-  // Tax rate: 8% on Retail, 0% on Wholesale (B2B tax-exempt resale certificates standard)
-  const taxRate = salesType === 'wholesale' ? 0 : 0.08;
-  const taxAmount = useMemo(() => {
-    return (cartSubtotal - discountAmount) * taxRate;
-  }, [cartSubtotal, discountAmount, taxRate]);
-
   const totalDue = useMemo(() => {
-    return Math.max(0, cartSubtotal - discountAmount + taxAmount);
-  }, [cartSubtotal, discountAmount, taxAmount]);
+    return Math.max(0, cartSubtotal - discountAmount);
+  }, [cartSubtotal, discountAmount]);
 
   const totalCartCost = useMemo(() => {
     return activeCart.reduce((sum, item) => sum + item.quantity * item.unitCost, 0);
@@ -211,7 +205,7 @@ export const POSModule: React.FC<POSModuleProps> = ({
       items: saleItems,
       subtotal: cartSubtotal,
       discount: discountAmount,
-      tax: taxAmount,
+      tax: 0,
       totalRevenue: totalDue,
       totalCOGS: totalCartCost,
       netProfit: projectedNetProfit,
@@ -256,8 +250,8 @@ export const POSModule: React.FC<POSModuleProps> = ({
             </div>
             <p className="text-xs text-slate-500 mt-0.5">
               {salesType === 'wholesale'
-                ? 'Applying tiered wholesale pricing. Tax-exempt resale rules active by default.'
-                : 'Applying direct customer retail pricing with 8% sales tax calculation.'}
+                ? 'Applying tiered wholesale pricing for bulk and B2B orders.'
+                : 'Applying direct customer retail pricing.'}
             </p>
           </div>
 
@@ -634,13 +628,6 @@ export const POSModule: React.FC<POSModuleProps> = ({
                 </div>
               </div>
 
-              <div className="flex justify-between text-slate-600">
-                <span>
-                  Sales Tax {salesType === 'wholesale' ? '(B2B Exempt)' : '(8%)'}
-                </span>
-                <span className="font-medium text-slate-900">{formatCurrency(taxAmount)}</span>
-              </div>
-
               {/* COGS & Profit Live Preview */}
               <div className="bg-slate-50 p-2 rounded-lg border border-slate-100 text-[11px] space-y-0.5">
                 <div className="flex justify-between text-slate-500">
@@ -832,11 +819,11 @@ export const POSModule: React.FC<POSModuleProps> = ({
                 {salesType === 'wholesale' && (
                   <div>
                     <label className="block text-xs font-medium text-slate-700 mb-1">
-                      Wholesale Company / Tax ID
+                      Wholesale Company / Business Name
                     </label>
                     <input
                       type="text"
-                      placeholder="e.g. Nordic Garment Distributors LLC"
+                      placeholder="e.g. Garment Distributors Ltd"
                       value={customerCompany}
                       onChange={(e) => setCustomerCompany(e.target.value)}
                       className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-900 focus:bg-white focus:ring-2 focus:ring-indigo-500"

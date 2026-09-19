@@ -5,11 +5,13 @@ import { InventoryModule } from './components/InventoryModule';
 import { CategoryModule } from './components/CategoryModule';
 import { ReportsModule } from './components/ReportsModule';
 import { ReceiptModal } from './components/ReceiptModal';
+import { AuthModal } from './components/AuthModal';
 import { 
   Category, 
   ClothingItem, 
   SaleTransaction, 
-  SalesType 
+  SalesType,
+  AuthUser 
 } from './types';
 import { 
   getStoredCategories, 
@@ -20,22 +22,62 @@ import {
   saveSales,
   clearAllData 
 } from './utils/storage';
+import { 
+  getStoredAuthUser,
+  logoutStaticUser
+} from './lib/auth';
+import { 
+  subscribeCategories,
+  subscribeProducts,
+  subscribeSales,
+  addOrUpdateCategoryDb,
+  deleteCategoryDb,
+  addOrUpdateProductDb,
+  deleteProductDb,
+  addSaleTransactionDb,
+  clearAllCloudData
+} from './lib/firebase';
+import { Lock, Store, Database, ShieldCheck, ArrowRight, KeyRound } from 'lucide-react';
 
 export default function App() {
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [products, setProducts] = useState<ClothingItem[]>([]);
-  const [sales, setSales] = useState<SaleTransaction[]>([]);
+  const [user, setUser] = useState<AuthUser | null>(() => getStoredAuthUser());
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [isSyncing, setIsSyncing] = useState(true);
+
+  const [categories, setCategories] = useState<Category[]>(() => getStoredCategories());
+  const [products, setProducts] = useState<ClothingItem[]>(() => getStoredProducts());
+  const [sales, setSales] = useState<SaleTransaction[]>(() => getStoredSales());
 
   const [activeTab, setActiveTab] = useState<'pos' | 'inventory' | 'categories' | 'reports'>('pos');
   const [salesType, setSalesType] = useState<SalesType>('retail');
   const [lastCompletedSale, setLastCompletedSale] = useState<SaleTransaction | null>(null);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
-  // Initialize data from local storage
+  // 1. Subscribe to Cloud Firestore database in real-time
   useEffect(() => {
-    setCategories(getStoredCategories());
-    setProducts(getStoredProducts());
-    setSales(getStoredSales());
+    setIsSyncing(true);
+
+    const unsubCat = subscribeCategories((cloudCats) => {
+      setCategories(cloudCats);
+      saveCategories(cloudCats);
+    });
+
+    const unsubProd = subscribeProducts((cloudProds) => {
+      setProducts(cloudProds);
+      saveProducts(cloudProds);
+    });
+
+    const unsubSales = subscribeSales((cloudSales) => {
+      setSales(cloudSales);
+      saveSales(cloudSales);
+      setIsSyncing(false);
+    });
+
+    return () => {
+      unsubCat();
+      unsubProd();
+      unsubSales();
+    };
   }, []);
 
   const showToast = (msg: string) => {
@@ -48,9 +90,9 @@ export default function App() {
     return products.filter((p) => p.stockQuantity <= p.minStockThreshold).length;
   }, [products]);
 
-  // Complete a Sale Transaction & Automatically Deduct Stock
-  const handleCompleteSale = (sale: SaleTransaction) => {
-    // 1. Deduct sold quantities from stock
+  // Complete a Sale Transaction & Automatically Store in Cloud Firestore Database
+  const handleCompleteSale = async (sale: SaleTransaction) => {
+    // 1. Calculate deducted stock items
     const updatedProducts = products.map((prod) => {
       const soldItem = sale.items.find((it) => it.productId === prod.id);
       if (soldItem) {
@@ -63,21 +105,28 @@ export default function App() {
       return prod;
     });
 
+    // Optimistic UI updates
     setProducts(updatedProducts);
     saveProducts(updatedProducts);
 
-    // 2. Persist new sale record
     const updatedSales = [sale, ...sales];
     setSales(updatedSales);
     saveSales(updatedSales);
 
-    // 3. Open receipt modal & notify user
+    // Persist directly to Firestore Database
+    try {
+      await addSaleTransactionDb(sale, updatedProducts);
+    } catch (err) {
+      console.error('Failed to sync sale to Firestore database:', err);
+    }
+
+    // Open receipt modal & notify user
     setLastCompletedSale(sale);
-    showToast(`Sale ${sale.receiptNumber} completed! Stock automatically deducted.`);
+    showToast(`Sale ${sale.receiptNumber} recorded & stored in database!`);
   };
 
-  // Product CRUD
-  const handleAddProduct = (itemData: Omit<ClothingItem, 'id' | 'createdAt' | 'updatedAt'>) => {
+  // Product CRUD -> Stored directly in Firestore Database
+  const handleAddProduct = async (itemData: Omit<ClothingItem, 'id' | 'createdAt' | 'updatedAt'>) => {
     const newItem: ClothingItem = {
       ...itemData,
       id: `prod-${Date.now()}`,
@@ -87,41 +136,74 @@ export default function App() {
     const updated = [newItem, ...products];
     setProducts(updated);
     saveProducts(updated);
-    showToast(`Added "${newItem.name}" to inventory.`);
+
+    try {
+      await addOrUpdateProductDb(newItem);
+    } catch (err) {
+      console.error('Failed to save product to database:', err);
+    }
+
+    showToast(`Saved "${newItem.name}" to cloud database.`);
   };
 
-  const handleUpdateProduct = (updatedItem: ClothingItem) => {
+  const handleUpdateProduct = async (updatedItem: ClothingItem) => {
     const updated = products.map((p) => (p.id === updatedItem.id ? updatedItem : p));
     setProducts(updated);
     saveProducts(updated);
-    showToast(`Updated "${updatedItem.name}".`);
+
+    try {
+      await addOrUpdateProductDb(updatedItem);
+    } catch (err) {
+      console.error('Failed to update product in database:', err);
+    }
+
+    showToast(`Updated "${updatedItem.name}" in database.`);
   };
 
-  const handleDeleteProduct = (productId: string) => {
+  const handleDeleteProduct = async (productId: string) => {
     const updated = products.filter((p) => p.id !== productId);
     setProducts(updated);
     saveProducts(updated);
-    showToast('Item deleted from inventory.');
+
+    try {
+      await deleteProductDb(productId);
+    } catch (err) {
+      console.error('Failed to delete product from database:', err);
+    }
+
+    showToast('Item deleted from database.');
   };
 
-  const handleQuickAdjustStock = (productId: string, delta: number, reason: string) => {
+  const handleQuickAdjustStock = async (productId: string, delta: number, reason: string) => {
+    let targetProduct: ClothingItem | null = null;
     const updated = products.map((p) => {
       if (p.id === productId) {
-        return {
+        targetProduct = {
           ...p,
           stockQuantity: Math.max(0, p.stockQuantity + delta),
           updatedAt: new Date().toISOString(),
         };
+        return targetProduct;
       }
       return p;
     });
+
     setProducts(updated);
     saveProducts(updated);
+
+    if (targetProduct) {
+      try {
+        await addOrUpdateProductDb(targetProduct);
+      } catch (err) {
+        console.error('Failed to update stock in database:', err);
+      }
+    }
+
     showToast(`Stock updated (${delta > 0 ? `+${delta}` : delta} units) - ${reason}.`);
   };
 
-  // Category CRUD
-  const handleAddCategory = (catData: Omit<Category, 'id'>) => {
+  // Category CRUD -> Stored directly in Firestore Database
+  const handleAddCategory = async (catData: Omit<Category, 'id'>) => {
     const newCat: Category = {
       ...catData,
       id: `cat-${Date.now()}`,
@@ -129,30 +211,83 @@ export default function App() {
     const updated = [...categories, newCat];
     setCategories(updated);
     saveCategories(updated);
-    showToast(`Category "${newCat.name}" created.`);
+
+    try {
+      await addOrUpdateCategoryDb(newCat);
+    } catch (err) {
+      console.error('Failed to save category in database:', err);
+    }
+
+    showToast(`Category "${newCat.name}" saved to database.`);
   };
 
-  const handleUpdateCategory = (updatedCat: Category) => {
+  const handleUpdateCategory = async (updatedCat: Category) => {
     const updated = categories.map((c) => (c.id === updatedCat.id ? updatedCat : c));
     setCategories(updated);
     saveCategories(updated);
-    showToast(`Category "${updatedCat.name}" updated.`);
+
+    try {
+      await addOrUpdateCategoryDb(updatedCat);
+    } catch (err) {
+      console.error('Failed to update category in database:', err);
+    }
+
+    showToast(`Category "${updatedCat.name}" updated in database.`);
   };
 
-  const handleDeleteCategory = (categoryId: string) => {
+  const handleDeleteCategory = async (categoryId: string) => {
     const updated = categories.filter((c) => c.id !== categoryId);
     setCategories(updated);
     saveCategories(updated);
-    showToast('Category removed.');
+
+    try {
+      await deleteCategoryDb(categoryId);
+    } catch (err) {
+      console.error('Failed to delete category from database:', err);
+    }
+
+    showToast('Category removed from database.');
   };
 
-  const handleClearAllData = () => {
+  const handleClearAllData = async () => {
     clearAllData();
     setCategories([]);
     setProducts([]);
     setSales([]);
-    showToast('All sample data has been cleared.');
+
+    try {
+      await clearAllCloudData();
+    } catch (err) {
+      console.error('Failed to clear cloud database:', err);
+    }
+
+    showToast('Database wiped and reset to a clean state.');
   };
+
+  const handleLogout = () => {
+    logoutStaticUser();
+    setUser(null);
+    showToast('Signed out of terminal.');
+  };
+
+  // If user is not logged in, present the clean static login gatekeeper
+  if (!user) {
+    return (
+      <div className="min-h-screen bg-slate-900 flex flex-col items-center justify-center p-4 selection:bg-indigo-500 selection:text-white relative overflow-hidden">
+        <div className="absolute top-0 right-0 w-96 h-96 bg-indigo-600/10 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute bottom-0 left-0 w-96 h-96 bg-purple-600/10 rounded-full blur-3xl pointer-events-none" />
+
+        <AuthModal
+          isOpen={true}
+          canDismiss={false}
+          onSuccess={(authUser) => {
+            setUser(authUser);
+            showToast(`Welcome, ${authUser.displayName}!`);
+          }}
+        />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-slate-100/70 text-slate-900 flex flex-col font-sans antialiased selection:bg-indigo-500 selection:text-white">
@@ -163,7 +298,11 @@ export default function App() {
         salesType={salesType}
         setSalesType={setSalesType}
         lowStockCount={lowStockCount}
+        user={user}
+        onOpenAuth={() => setIsAuthModalOpen(true)}
+        onLogout={handleLogout}
         onClearAllData={handleClearAllData}
+        isSyncing={isSyncing}
       />
 
       {/* Main Content Area */}
@@ -224,6 +363,18 @@ export default function App() {
         onNewSale={() => {
           setLastCompletedSale(null);
           setActiveTab('pos');
+        }}
+      />
+
+      {/* Switch User Modal (if opened via Navbar) */}
+      <AuthModal
+        isOpen={isAuthModalOpen}
+        canDismiss={true}
+        onClose={() => setIsAuthModalOpen(false)}
+        onSuccess={(authUser) => {
+          setUser(authUser);
+          setIsAuthModalOpen(false);
+          showToast(`Logged in as ${authUser.displayName}`);
         }}
       />
     </div>
