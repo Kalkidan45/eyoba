@@ -11,7 +11,6 @@ interface NavbarProps {
   user: AuthUser | null;
   onOpenAuth: () => void;
   onLogout: () => void;
-  onClearAllData?: () => void;
   isSyncing?: boolean;
 }
 
@@ -24,7 +23,6 @@ export const Navbar: React.FC<NavbarProps> = ({
   user,
   onOpenAuth,
   onLogout,
-  onClearAllData,
   isSyncing = false,
 }) => {
   const navItems = [
@@ -132,22 +130,6 @@ export const Navbar: React.FC<NavbarProps> = ({
                 Wholesale
               </button>
             </div>
-
-            {/* Clear Data (Optional) */}
-            {onClearAllData && user?.role === 'admin' && (
-              <button
-                type="button"
-                onClick={() => {
-                  if (window.confirm('Clear all stored inventory, categories, and sales transactions in the cloud database?')) {
-                    onClearAllData();
-                  }
-                }}
-                className="hidden lg:inline-block px-2 py-1 text-[11px] font-medium text-slate-400 hover:text-rose-400 hover:bg-slate-800 rounded transition-colors whitespace-nowrap"
-                title="Wipe all data and start completely fresh"
-              >
-                Clear Database
-              </button>
-            )}
 
             {/* User Login/Account Button */}
             {user ? (

@@ -19,8 +19,7 @@ import {
   getStoredProducts, 
   saveProducts, 
   getStoredSales, 
-  saveSales,
-  clearAllData 
+  saveSales 
 } from './utils/storage';
 import { 
   getStoredAuthUser,
@@ -34,8 +33,7 @@ import {
   deleteCategoryDb,
   addOrUpdateProductDb,
   deleteProductDb,
-  addSaleTransactionDb,
-  clearAllCloudData
+  addSaleTransactionDb
 } from './lib/firebase';
 import { Lock, Store, Database, ShieldCheck, ArrowRight, KeyRound } from 'lucide-react';
 
@@ -249,21 +247,6 @@ export default function App() {
     showToast('Category removed from database.');
   };
 
-  const handleClearAllData = async () => {
-    clearAllData();
-    setCategories([]);
-    setProducts([]);
-    setSales([]);
-
-    try {
-      await clearAllCloudData();
-    } catch (err) {
-      console.error('Failed to clear cloud database:', err);
-    }
-
-    showToast('Database wiped and reset to a clean state.');
-  };
-
   const handleLogout = () => {
     logoutStaticUser();
     setUser(null);
@@ -301,7 +284,6 @@ export default function App() {
         user={user}
         onOpenAuth={() => setIsAuthModalOpen(true)}
         onLogout={handleLogout}
-        onClearAllData={handleClearAllData}
         isSyncing={isSyncing}
       />
 
