@@ -1,108 +1,45 @@
-import { Category, ClothingItem, SaleTransaction, StockValuation, MonthlyFinancialSummary } from '../types';
-import { DEMO_CATEGORIES, DEMO_PRODUCTS, DEMO_SALES } from '../mockData';
+import { ClothingItem, StockValuation } from '../types';
 
-const STORAGE_KEYS = {
-  CATEGORIES: 'apparel_pos_categories_v2',
-  PRODUCTS: 'apparel_pos_products_v2',
-  SALES: 'apparel_pos_sales_v2',
-  INITIALIZED_FLAG: 'apparel_pos_v2_initialized',
-};
-
-// Purge legacy sample data once on startup
-const purgeSampleDataOnce = () => {
+/**
+ * Clean up and purge any legacy local storage data keys
+ * to ensure that all business records (products, categories, sales)
+ * are stored exclusively in the Cloud Firestore database.
+ */
+export const purgeAllLocalStorageRecords = () => {
   try {
     if (typeof window !== 'undefined' && window.localStorage) {
-      if (!localStorage.getItem(STORAGE_KEYS.INITIALIZED_FLAG)) {
-        localStorage.removeItem('apparel_pos_categories_v1');
-        localStorage.removeItem('apparel_pos_products_v1');
-        localStorage.removeItem('apparel_pos_sales_v1');
-        localStorage.setItem(STORAGE_KEYS.CATEGORIES, JSON.stringify([]));
-        localStorage.setItem(STORAGE_KEYS.PRODUCTS, JSON.stringify([]));
-        localStorage.setItem(STORAGE_KEYS.SALES, JSON.stringify([]));
-        localStorage.setItem(STORAGE_KEYS.INITIALIZED_FLAG, 'true');
-      }
+      const keysToRemove = [
+        'apparel_pos_categories_v2',
+        'apparel_pos_products_v2',
+        'apparel_pos_sales_v2',
+        'apparel_pos_categories_v1',
+        'apparel_pos_products_v1',
+        'apparel_pos_sales_v1',
+        'apparel_pos_v2_initialized',
+        'apparel_pos_v1_initialized',
+        'apparel_pos_categories',
+        'apparel_pos_products',
+        'apparel_pos_sales',
+      ];
+      keysToRemove.forEach((k) => {
+        try {
+          localStorage.removeItem(k);
+        } catch {
+          // Ignore
+        }
+      });
     }
   } catch (err) {
-    console.error('Storage initialization error:', err);
+    console.error('Purge legacy storage notice:', err);
   }
 };
 
-purgeSampleDataOnce();
+// Execute purge immediately on bundle load
+purgeAllLocalStorageRecords();
 
-export const getStoredCategories = (): Category[] => {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEYS.CATEGORIES);
-    if (!raw) {
-      localStorage.setItem(STORAGE_KEYS.CATEGORIES, JSON.stringify([]));
-      return [];
-    }
-    return JSON.parse(raw);
-  } catch (err) {
-    console.error('Failed to read categories from storage:', err);
-    return [];
-  }
-};
-
-export const saveCategories = (categories: Category[]) => {
-  localStorage.setItem(STORAGE_KEYS.CATEGORIES, JSON.stringify(categories));
-};
-
-export const getStoredProducts = (): ClothingItem[] => {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEYS.PRODUCTS);
-    if (!raw) {
-      localStorage.setItem(STORAGE_KEYS.PRODUCTS, JSON.stringify([]));
-      return [];
-    }
-    return JSON.parse(raw);
-  } catch (err) {
-    console.error('Failed to read products from storage:', err);
-    return [];
-  }
-};
-
-export const saveProducts = (products: ClothingItem[]) => {
-  localStorage.setItem(STORAGE_KEYS.PRODUCTS, JSON.stringify(products));
-};
-
-export const getStoredSales = (): SaleTransaction[] => {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEYS.SALES);
-    if (!raw) {
-      localStorage.setItem(STORAGE_KEYS.SALES, JSON.stringify([]));
-      return [];
-    }
-    return JSON.parse(raw);
-  } catch (err) {
-    console.error('Failed to read sales from storage:', err);
-    return [];
-  }
-};
-
-export const saveSales = (sales: SaleTransaction[]) => {
-  localStorage.setItem(STORAGE_KEYS.SALES, JSON.stringify(sales));
-};
-
-export const clearAllData = () => {
-  localStorage.setItem(STORAGE_KEYS.CATEGORIES, JSON.stringify([]));
-  localStorage.setItem(STORAGE_KEYS.PRODUCTS, JSON.stringify([]));
-  localStorage.setItem(STORAGE_KEYS.SALES, JSON.stringify([]));
-  localStorage.removeItem('apparel_pos_categories_v1');
-  localStorage.removeItem('apparel_pos_products_v1');
-  localStorage.removeItem('apparel_pos_sales_v1');
-};
-
-export const loadDemoData = () => {
-  localStorage.setItem(STORAGE_KEYS.CATEGORIES, JSON.stringify(DEMO_CATEGORIES));
-  localStorage.setItem(STORAGE_KEYS.PRODUCTS, JSON.stringify(DEMO_PRODUCTS));
-  localStorage.setItem(STORAGE_KEYS.SALES, JSON.stringify(DEMO_SALES));
-  return {
-    categories: DEMO_CATEGORIES,
-    products: DEMO_PRODUCTS,
-    sales: DEMO_SALES,
-  };
-};
-
+/**
+ * Pure calculation utilities for stock valuation and currency formatting
+ */
 export const calculateStockValuation = (products: ClothingItem[]): StockValuation => {
   return products.reduce(
     (acc, item) => {

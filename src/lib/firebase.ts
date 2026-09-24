@@ -8,20 +8,82 @@ import {
   onSnapshot, 
   deleteDoc, 
   writeBatch,
+  getDocFromServer,
   Unsubscribe 
 } from 'firebase/firestore';
 import firebaseConfig from '../../firebase-applet-config.json';
 import { Category, ClothingItem, SaleTransaction } from '../types';
+import { DEMO_CATEGORIES, DEMO_PRODUCTS, DEMO_SALES } from '../mockData';
 
 // Initialize Firebase App
 const app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
 
-// Initialize Firestore (support named database if specified in config)
+// Initialize Firestore using the specified firestoreDatabaseId
 export const db = firebaseConfig.firestoreDatabaseId 
   ? getFirestore(app, firebaseConfig.firestoreDatabaseId)
   : getFirestore(app);
 
-// Real-time Firestore Listeners
+export enum OperationType {
+  CREATE = 'create',
+  UPDATE = 'update',
+  DELETE = 'delete',
+  LIST = 'list',
+  GET = 'get',
+  WRITE = 'write',
+}
+
+export interface FirestoreErrorInfo {
+  error: string;
+  operationType: OperationType;
+  path: string | null;
+  authInfo: {
+    userId?: string | null;
+    email?: string | null;
+    emailVerified?: boolean | null;
+    isAnonymous?: boolean | null;
+    tenantId?: string | null;
+    providerInfo?: {
+      providerId?: string | null;
+      email?: string | null;
+    }[];
+  };
+}
+
+export function handleFirestoreError(error: unknown, operationType: OperationType, path: string | null): never {
+  const errInfo: FirestoreErrorInfo = {
+    error: error instanceof Error ? error.message : String(error),
+    authInfo: {
+      userId: null,
+      email: null,
+      emailVerified: null,
+      isAnonymous: null,
+      tenantId: null,
+      providerInfo: []
+    },
+    operationType,
+    path
+  };
+  console.error('Firestore Error: ', JSON.stringify(errInfo));
+  throw new Error(JSON.stringify(errInfo));
+}
+
+// Test database connection at startup
+export async function testConnection(): Promise<boolean> {
+  try {
+    await getDocFromServer(doc(db, 'test', 'connection'));
+    return true;
+  } catch (error) {
+    if (error instanceof Error && error.message.includes('the client is offline')) {
+      console.warn("Firestore connection check: Client is offline or initializing.");
+    }
+    return false;
+  }
+}
+
+// Automatically trigger connection validation
+testConnection();
+
+// Real-time Firestore Listeners directly from the Cloud Database
 export const subscribeCategories = (
   onData: (categories: Category[]) => void,
   onError?: (err: Error) => void
@@ -38,8 +100,13 @@ export const subscribeCategories = (
       onData(list);
     },
     (error) => {
-      console.warn('Categories cloud listener notice:', error);
+      console.error('Categories cloud listener error:', error);
       if (onError) onError(error);
+      try {
+        handleFirestoreError(error, OperationType.LIST, 'categories');
+      } catch {
+        // Logged
+      }
     }
   );
 };
@@ -60,8 +127,13 @@ export const subscribeProducts = (
       onData(list);
     },
     (error) => {
-      console.warn('Products cloud listener notice:', error);
+      console.error('Products cloud listener error:', error);
       if (onError) onError(error);
+      try {
+        handleFirestoreError(error, OperationType.LIST, 'products');
+      } catch {
+        // Logged
+      }
     }
   );
 };
@@ -83,63 +155,70 @@ export const subscribeSales = (
       onData(list);
     },
     (error) => {
-      console.warn('Sales cloud listener notice:', error);
+      console.error('Sales cloud listener error:', error);
       if (onError) onError(error);
+      try {
+        handleFirestoreError(error, OperationType.LIST, 'sales');
+      } catch {
+        // Logged
+      }
     }
   );
 };
 
-// Firestore CRUD operations: Directly storing every record to Cloud Database
+// Firestore CRUD operations: Every single record is saved directly to the database
 export const addOrUpdateCategoryDb = async (category: Category) => {
+  const path = `categories/${category.id}`;
   try {
     const catRef = doc(db, 'categories', category.id);
     await setDoc(catRef, category, { merge: true });
   } catch (err) {
-    console.error('Failed to store category in Firestore database:', err);
-    throw err;
+    handleFirestoreError(err, OperationType.WRITE, path);
   }
 };
 
 export const deleteCategoryDb = async (categoryId: string) => {
+  const path = `categories/${categoryId}`;
   try {
     await deleteDoc(doc(db, 'categories', categoryId));
   } catch (err) {
-    console.error('Failed to delete category in Firestore database:', err);
-    throw err;
+    handleFirestoreError(err, OperationType.DELETE, path);
   }
 };
 
 export const addOrUpdateProductDb = async (product: ClothingItem) => {
+  const path = `products/${product.id}`;
   try {
     const prodRef = doc(db, 'products', product.id);
     await setDoc(prodRef, product, { merge: true });
   } catch (err) {
-    console.error('Failed to store product in Firestore database:', err);
-    throw err;
+    handleFirestoreError(err, OperationType.WRITE, path);
   }
 };
 
 export const deleteProductDb = async (productId: string) => {
+  const path = `products/${productId}`;
   try {
     await deleteDoc(doc(db, 'products', productId));
   } catch (err) {
-    console.error('Failed to delete product from Firestore database:', err);
-    throw err;
+    handleFirestoreError(err, OperationType.DELETE, path);
   }
 };
 
+// Every transaction is stored directly in the database
 export const addSaleTransactionDb = async (
   sale: SaleTransaction, 
   updatedProducts?: ClothingItem[]
 ) => {
+  const path = `sales/${sale.id}`;
   try {
     const batch = writeBatch(db);
     
-    // Save sale transaction record
+    // Save sale transaction record permanently in cloud database
     const saleRef = doc(db, 'sales', sale.id);
     batch.set(saleRef, sale);
 
-    // Update product stock counts in database
+    // Update product stock counts in cloud database
     if (updatedProducts && updatedProducts.length > 0) {
       for (const prod of updatedProducts) {
         const prodRef = doc(db, 'products', prod.id);
@@ -149,8 +228,7 @@ export const addSaleTransactionDb = async (
 
     await batch.commit();
   } catch (err) {
-    console.error('Failed to store sale transaction in Firestore database:', err);
-    throw err;
+    handleFirestoreError(err, OperationType.CREATE, path);
   }
 };
 
@@ -163,32 +241,37 @@ export const batchUpdateProductsDb = async (products: ClothingItem[]) => {
     }
     await batch.commit();
   } catch (err) {
-    console.error('Failed to batch update products in Firestore database:', err);
-    throw err;
+    handleFirestoreError(err, OperationType.WRITE, 'products');
   }
 };
 
-export const clearAllCloudData = async () => {
+// Seeds standard apparel catalog and categories directly into the Firestore database
+export const seedDefaultDataToDatabase = async (): Promise<boolean> => {
   try {
-    // Clear categories
-    const catSnap = await getDocs(collection(db, 'categories'));
-    const catBatch = writeBatch(db);
-    catSnap.forEach((d) => catBatch.delete(d.ref));
-    await catBatch.commit();
+    const batch = writeBatch(db);
+    
+    // Seed categories directly into Firestore
+    for (const cat of DEMO_CATEGORIES) {
+      const catRef = doc(db, 'categories', cat.id);
+      batch.set(catRef, cat);
+    }
 
-    // Clear products
-    const prodSnap = await getDocs(collection(db, 'products'));
-    const prodBatch = writeBatch(db);
-    prodSnap.forEach((d) => prodBatch.delete(d.ref));
-    await prodBatch.commit();
+    // Seed products directly into Firestore
+    for (const prod of DEMO_PRODUCTS) {
+      const prodRef = doc(db, 'products', prod.id);
+      batch.set(prodRef, prod);
+    }
 
-    // Clear sales
-    const salesSnap = await getDocs(collection(db, 'sales'));
-    const salesBatch = writeBatch(db);
-    salesSnap.forEach((d) => salesBatch.delete(d.ref));
-    await salesBatch.commit();
+    // Seed historical demo sales directly into Firestore
+    for (const sale of DEMO_SALES) {
+      const saleRef = doc(db, 'sales', sale.id);
+      batch.set(saleRef, sale);
+    }
+
+    await batch.commit();
+    return true;
   } catch (err) {
-    console.error('Failed to clear cloud database:', err);
-    throw err;
+    console.error('Failed to seed default catalog into Firestore:', err);
+    handleFirestoreError(err, OperationType.WRITE, 'seed');
   }
 };

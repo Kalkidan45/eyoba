@@ -12,6 +12,8 @@ interface NavbarProps {
   onOpenAuth: () => void;
   onLogout: () => void;
   isSyncing?: boolean;
+  productCount?: number;
+  salesCount?: number;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
@@ -24,6 +26,8 @@ export const Navbar: React.FC<NavbarProps> = ({
   onOpenAuth,
   onLogout,
   isSyncing = false,
+  productCount = 0,
+  salesCount = 0,
 }) => {
   const navItems = [
     {
@@ -58,10 +62,10 @@ export const Navbar: React.FC<NavbarProps> = ({
             <span className="font-extrabold text-base tracking-tight text-white whitespace-nowrap">
               ApparelPOS
             </span>
-            <div className="hidden sm:flex items-center space-x-1 px-2 py-0.5 rounded text-[10px] font-medium text-slate-300 bg-slate-800 border border-slate-700/60 whitespace-nowrap">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-              <Database className="w-3 h-3 text-emerald-400 mr-0.5" />
-              <span>Cloud Database Sync</span>
+            <div className="hidden sm:flex items-center space-x-1.5 px-2.5 py-0.5 rounded text-[11px] font-medium text-slate-300 bg-slate-800 border border-slate-700/60 whitespace-nowrap">
+              <span className={`w-2 h-2 rounded-full ${isSyncing ? 'bg-amber-400 animate-ping' : 'bg-emerald-400 animate-pulse'}`} />
+              <Database className="w-3.5 h-3.5 text-emerald-400" />
+              <span>Cloud Database: {isSyncing ? 'Syncing...' : `${productCount} Items • ${salesCount} Sales`}</span>
             </div>
           </div>
 

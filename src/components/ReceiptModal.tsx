@@ -174,8 +174,12 @@ export const ReceiptModal: React.FC<ReceiptModalProps> = ({
             )}
           </div>
 
-          <div className="text-center pt-4 text-slate-400 text-[10px]">
-            <p>Automatic stock inventory level deducted.</p>
+          <div className="text-center pt-4 text-slate-500 text-[10px] space-y-1">
+            <div className="inline-flex items-center space-x-1 px-2 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-200 font-sans font-medium text-[10px]">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+              <span>Database Record: {sale.id}</span>
+            </div>
+            <p>Automatic stock inventory level deducted in Cloud Database.</p>
             <p className="mt-0.5">Thank you for your visit!</p>
           </div>
         </div>
