@@ -130,15 +130,20 @@ export default function App() {
       return prod;
     });
 
-    // 2. Persist directly to Firestore Database (no local storage used)
+    // Optimistic UI updates
+    setProducts(updatedProducts);
+    setSales((prev) => [sale, ...prev]);
+    setLastCompletedSale(sale);
+
+    // 2. Persist directly to Firestore Database
     try {
       setIsSyncing(true);
       await addSaleTransactionDb(sale, updatedProducts);
-      setLastCompletedSale(sale);
-      showToast(`Transaction ${sale.receiptNumber} successfully saved in Cloud Database!`);
+      showToast(`Transaction ${sale.receiptNumber} saved in Cloud Database!`);
     } catch (err) {
       console.error('Failed to sync sale to Firestore database:', err);
-      showToast('Error saving transaction to database. Please check connection.');
+      const errMsg = err instanceof Error ? err.message : String(err);
+      showToast(`Database notice: ${errMsg}`);
     } finally {
       setIsSyncing(false);
     }

@@ -20,5 +20,10 @@ service cloud.firestore {
     match /system/{document=**} {
       allow read, write: if true;
     }
+
+    // General wildcard for connectivity testing and subcollections
+    match /{document=**} {
+      allow read, write: if true;
+    }
   }
 }

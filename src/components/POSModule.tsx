@@ -200,8 +200,8 @@ export const POSModule: React.FC<POSModuleProps> = ({
       receiptNumber: receiptNum,
       salesType,
       customerName: customerName.trim() || (salesType === 'wholesale' ? 'Wholesale Partner' : 'Walk-in Customer'),
-      customerCompany: customerCompany.trim() || undefined,
-      customerPhone: customerPhone.trim() || undefined,
+      customerCompany: customerCompany.trim() || '',
+      customerPhone: customerPhone.trim() || '',
       items: saleItems,
       subtotal: cartSubtotal,
       discount: discountAmount,
@@ -211,10 +211,10 @@ export const POSModule: React.FC<POSModuleProps> = ({
       netProfit: projectedNetProfit,
       profitMargin: totalDue > 0 ? (projectedNetProfit / totalDue) * 100 : 0,
       paymentMethod,
-      amountTendered: paymentMethod === 'cash' ? tenderedNum : undefined,
-      changeDue: paymentMethod === 'cash' ? changeAmount : undefined,
+      amountTendered: paymentMethod === 'cash' ? tenderedNum : totalDue,
+      changeDue: paymentMethod === 'cash' ? changeAmount : 0,
       timestamp: new Date().toISOString(),
-      notes: checkoutNotes.trim() || undefined,
+      notes: checkoutNotes.trim() || '',
     };
 
     onCompleteSale(saleRecord);
